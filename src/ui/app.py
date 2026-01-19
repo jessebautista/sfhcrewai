@@ -94,44 +94,68 @@ with tab_main:
 
     # Check for proposals
     proposal_manager = ProposalManager()
-    pending_proposal = proposal_manager.get_proposal()
+    
+    try:
+        pending_proposals = proposal_manager.get_pending_proposals()
+    except Exception as e:
+        pending_proposals = []
+        # Silently handle if table doesn't exist yet
 
     with st.sidebar:
         st.title("Admin Controls")
-        if pending_proposal:
-            st.warning("⚠️ Pending Approval")
-            st.json(pending_proposal)
+        
+        if pending_proposals:
+            st.warning(f"⚠️ {len(pending_proposals)} Pending Proposal(s)")
             
-            col_approve, col_reject = st.columns(2)
-            if col_approve.button("Approve & Execute"):
-                try:
-                    manager = SupabaseManager()
-                    proposal_type = pending_proposal.get("type", "update")
+            for idx, proposal in enumerate(pending_proposals):
+                with st.expander(f"Proposal {idx + 1}: {proposal['proposal_type'].upper()} - {proposal['created_at'][:19]}", expanded=True):
+                    st.caption(f"ID: {proposal['id']}")
+                    st.markdown(f"**Type:** {proposal['proposal_type']}")
+                    st.markdown(f"**Reason:** {proposal.get('reason', 'N/A')}")
                     
-                    if proposal_type == "update":
-                        result = manager.update_record(
-                            record_id=pending_proposal["id"],
-                            data=pending_proposal["data"],
-                            approval_given=True
-                        )
-                        st.success(f"Successfully updated record: {result}")
+                    # Show target record for updates
+                    if proposal.get('target_record_id'):
+                        st.markdown(f"**Target ID:** {proposal['target_record_id']}")
                     
-                    elif proposal_type == "create":
-                        result = manager.create_record(
-                            data=pending_proposal["data"],
-                            approval_given=True
-                        )
-                        st.success(f"Successfully created record: {result}")
-
-                    proposal_manager.clear_proposal()
-                    st.rerun() # Refresh to show updated state
-                except Exception as e:
-                    st.error(f"Operation failed: {e}")
+                    # Show payload
+                    st.markdown("**Payload:**")
+                    st.json(proposal['payload'])
                     
-            if col_reject.button("Reject"):
-                proposal_manager.clear_proposal()
-                st.info("Proposal rejected.")
-                st.rerun()
+                    # Action buttons
+                    col_approve, col_reject = st.columns(2)
+                    
+                    # Approve button
+                    if col_approve.button(f"✅ Approve", key=f"approve_{proposal['id']}"):
+                        try:
+                            proposal_manager.approve_proposal(proposal['id'])
+                            st.success(f"Approved and executed!")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Failed: {e}")
+                    
+                    # Reject button with feedback
+                    if col_reject.button(f"❌ Reject", key=f"reject_{proposal['id']}"):
+                        # Use a session state to track which proposal is being rejected
+                        st.session_state[f"rejecting_{proposal['id']}"] = True
+                        st.rerun()
+                    
+                    # Show feedback input if rejecting
+                    if st.session_state.get(f"rejecting_{proposal['id']}", False):
+                        feedback = st.text_area("Rejection reason (optional):", key=f"feedback_{proposal['id']}")
+                        
+                        col_submit, col_cancel = st.columns(2)
+                        if col_submit.button("Submit Rejection", key=f"submit_reject_{proposal['id']}"):
+                            try:
+                                proposal_manager.reject_proposal(proposal['id'], feedback)
+                                st.info("Proposal rejected.")
+                                st.session_state[f"rejecting_{proposal['id']}"] = False
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Failed: {e}")
+                        
+                        if col_cancel.button("Cancel", key=f"cancel_reject_{proposal['id']}"):
+                            st.session_state[f"rejecting_{proposal['id']}"] = False
+                            st.rerun()
         else:
             st.info("No pending proposals.")
 
