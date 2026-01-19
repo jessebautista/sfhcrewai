@@ -61,13 +61,23 @@ class OrchestratorAgent(Agent):
             process=Process.sequential
         )
         
+        # Initialize Logger
+        from src.core.logger import AgentLogger
+        logger = AgentLogger()
+        logger.log("Orchestrator", "mission_start", "Starting mission", {"instruction": instruction})
+
         # Run
         # Note: CrewAI doesn't natively support per-step streaming callbacks easily in all versions.
         # We will manually log start/end for the MVP via the handler if provided.
         if callback_handler:
             callback_handler.on_step_start("Crew", "Starting mission...")
             
-        result = crew.kickoff()
+        try:
+            result = crew.kickoff()
+            logger.log("Orchestrator", "mission_end", "Mission completed", {"result": str(result)}, status="success")
+        except Exception as e:
+            logger.log("Orchestrator", "error", f"Mission failed: {str(e)}", status="failure")
+            raise e
         
         if callback_handler:
             callback_handler.on_step_finish("Crew", str(result))
