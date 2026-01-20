@@ -18,6 +18,9 @@ load_dotenv()
 # Initialize Slack app with user token (posts as user account)
 app = App(token=os.environ.get("SLACK_USER_TOKEN"))
 
+# Store the Slack client globally for sending notifications
+slack_client = None
+
 
 @app.event("message")
 def handle_message(event, say, logger):
@@ -106,6 +109,183 @@ def handle_mention(event, say, logger):
         )
 
 
+@app.action("approve_proposal")
+def handle_approve_proposal(ack, body, logger):
+    """
+    Handle approval button click.
+    """
+    ack()  # Acknowledge the action
+    
+    proposal_id = body["actions"][0]["value"]
+    user = body["user"]["id"]
+    
+    logger.info(f"User {user} approving proposal {proposal_id}")
+    
+    try:
+        from src.core.proposal import ProposalManager
+        manager = ProposalManager()
+        manager.approve_proposal(proposal_id)
+        
+        # Update the message to show it's been approved
+        app.client.chat_update(
+            channel=body["container"]["channel_id"],
+            ts=body["container"]["message_ts"],
+            text=f"✅ Proposal approved by <@{user}>!",
+            blocks=[
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f"✅ *Proposal Approved*\n\nApproved by <@{user}> and executed successfully!"
+                    }
+                }
+            ]
+        )
+        
+    except Exception as e:
+        logger.error(f"Failed to approve proposal: {e}")
+        app.client.chat_postMessage(
+            channel=body["container"]["channel_id"],
+            thread_ts=body["container"]["message_ts"],
+            text=f"❌ Error approving proposal: {str(e)}"
+        )
+
+
+@app.action("reject_proposal")
+def handle_reject_proposal(ack, body, logger):
+    """
+    Handle rejection button click.
+    """
+    ack()  # Acknowledge the action
+    
+    proposal_id = body["actions"][0]["value"]
+    user = body["user"]["id"]
+    
+    logger.info(f"User {user} rejecting proposal {proposal_id}")
+    
+    try:
+        from src.core.proposal import ProposalManager
+        manager = ProposalManager()
+        manager.reject_proposal(proposal_id, f"Rejected by user via Slack")
+        
+        # Update the message to show it's been rejected
+        app.client.chat_update(
+            channel=body["container"]["channel_id"],
+            ts=body["container"]["message_ts"],
+            text=f"❌ Proposal rejected by <@{user}>.",
+            blocks=[
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f"❌ *Proposal Rejected*\n\nRejected by <@{user}>."
+                    }
+                }
+            ]
+        )
+        
+    except Exception as e:
+        logger.error(f"Failed to reject proposal: {e}")
+        app.client.chat_postMessage(
+            channel=body["container"]["channel_id"],
+            thread_ts=body["container"]["message_ts"],
+            text=f"❌ Error rejecting proposal: {str(e)}"
+        )
+
+
+def send_proposal_notification(proposal):
+    """Send an interactive message to Slack when a proposal is created."""
+    global slack_client
+    if not slack_client:
+        from slack_sdk import WebClient
+        slack_client = WebClient(token=os.environ.get("SLACK_USER_TOKEN"))
+    
+    try:
+        # Get the user who installed the app (the user token owner)
+        # For simplicity, we'll post to a specific channel or DM
+        # You can configure this via environment variable
+        notification_channel = os.environ.get("SLACK_NOTIFICATION_CHANNEL", "@me")
+        
+        proposal_type = proposal.get("proposal_type", "unknown")
+        reason = proposal.get("reason", "No reason provided")
+        proposal_id = proposal.get("id")
+        payload = proposal.get("payload", {})
+        
+        # Build a nice formatted message
+        payload_preview = str(payload)[:200] + "..." if len(str(payload)) > 200 else str(payload)
+        
+        blocks = [
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": "📋 New Proposal Awaiting Approval"
+                }
+            },
+            {
+                "type": "section",
+                "fields": [
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Type:*\n{proposal_type.upper()}"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Proposal ID:*\n`{proposal_id}`"
+                    }
+                ]
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*Reason:*\n{reason}"
+                }
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*Payload Preview:*\n```{payload_preview}```"
+                }
+            },
+            {
+                "type": "actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "✅ Approve"
+                        },
+                        "style": "primary",
+                        "action_id": "approve_proposal",
+                        "value": proposal_id
+                    },
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "❌ Reject"
+                        },
+                        "style": "danger",
+                        "action_id": "reject_proposal",
+                        "value": proposal_id
+                    }
+                ]
+            }
+        ]
+        
+        slack_client.chat_postMessage(
+            channel=notification_channel,
+            text=f"New proposal: {proposal_type}",
+            blocks=blocks
+        )
+        
+    except Exception as e:
+        print(f"Failed to send proposal notification: {e}")
+
+
 def main():
     """Start the Slack bot with Socket Mode."""
     app_token = os.environ.get("SLACK_APP_TOKEN")
@@ -115,9 +295,14 @@ def main():
         print("❌ Error: SLACK_APP_TOKEN and SLACK_USER_TOKEN must be set in .env")
         sys.exit(1)
     
+    # Store client globally for notifications
+    global slack_client
+    slack_client = app.client
+    
     print("🤖 Starting Slack bot...")
     print("📝 Using user token - messages will post as your user account")
     print("✅ Bot is running! Send a DM or @mention to interact.")
+    print("💡 Interactive proposal buttons enabled!")
     print("Press Ctrl+C to stop.")
     
     # Start Socket Mode handler

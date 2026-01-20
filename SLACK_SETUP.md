@@ -62,14 +62,14 @@ Follow these steps to create and configure your Slack app for the CrewAI News Ma
 
 ## Step 5: Add Tokens to .env
 
-Open your `.env` file and add these two tokens:
+Add these tokens to your `.env` file:
 
 ```env
-SLACK_APP_TOKEN=xapp-1-A0123456789-0123456789012-abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789
-SLACK_USER_TOKEN=xoxp-0123456789012-0123456789012-0123456789012-abcdef0123456789abcdef0123456789
+SLACK_APP_TOKEN=xapp-...    # Your app token from Step 2
+SLACK_USER_TOKEN=xoxp-...   # Your user token from Step 3
 ```
 
-Replace the example values with your actual tokens from Steps 2 and 3.
+Replace the `...` with your actual token values.
 
 ---
 

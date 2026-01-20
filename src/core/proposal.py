@@ -62,7 +62,19 @@ class ProposalManager:
         result = self.client.table("proposals").insert(proposal_record).execute()
         
         if result.data and len(result.data) > 0:
-            return result.data[0]["id"]
+            proposal_id = result.data[0]["id"]
+            
+            # Send Slack notification with interactive buttons
+            try:
+                from src.interfaces.slack_bot import send_proposal_notification
+                # Pass the full proposal data including the ID
+                full_proposal = result.data[0]
+                send_proposal_notification(full_proposal)
+            except Exception as e:
+                # Silent fail - don't break if Slack notification fails
+                print(f"Warning: Could not send Slack notification: {e}")
+            
+            return proposal_id
         else:
             raise Exception("Failed to submit proposal")
 
