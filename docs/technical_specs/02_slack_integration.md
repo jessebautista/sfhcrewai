@@ -8,15 +8,18 @@
 Enable users to interact with the CrewAI news manager directly via Slack. The bot will accept natural language commands in a Direct Message (DM) or Mention, run the agent, and reply in a thread.
 
 ## 2. Prerequisites
--   **Slack App** configured in [api.slack.com/apps](https://api.slack.com/apps).
+-   **Slack User Account** that will be used for posting messages.
+-   **User OAuth Token** with appropriate scopes.
 -   **Socket Mode** enabled (bypasses need for public HTTP webhook).
--   **Scopes**: `app_mentions:read`, `chat:write`, `im:history`, `im:read`.
+-   **Scopes (User Token)**: `chat:write`, `users:read`, `channels:history`, `groups:history`, `im:history`, `mpim:history`.
 
 ## 3. Configuration (`.env`)
 ```env
-SLACK_APP_TOKEN=xapp-...  # App-level token for Socket Mode
-SLACK_BOT_TOKEN=xoxb-...  # Bot User OAuth Token
+SLACK_APP_TOKEN=xapp-...   # App-level token for Socket Mode
+SLACK_USER_TOKEN=xoxp-...  # User OAuth Token (posts as user account)
 ```
+
+> **⚠️ Security Warning**: User tokens have full permissions of the user account. Store securely and be aware of the security implications.
 
 ## 4. Implementation Details
 
@@ -37,7 +40,8 @@ from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 from src.agents.orchestrator import OrchestratorAgent
 
-app = App(token=os.environ["SLACK_BOT_TOKEN"])
+# Use user token to post as a real user account
+app = App(token=os.environ["SLACK_USER_TOKEN"])
 
 @app.event("message")
 def handle_message(message, say):
