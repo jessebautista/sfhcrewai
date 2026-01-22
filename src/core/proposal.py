@@ -27,7 +27,7 @@ class ProposalManager:
             raise ValueError("Supabase credentials not found in environment.")
         self.client = create_client(url, key)
 
-    def submit_proposal(self, proposal: dict) -> str:
+    def submit_proposal(self, proposal: dict, requester_email: str = None) -> str:
         """
         Submit a proposal for review.
         
@@ -39,6 +39,7 @@ class ProposalManager:
                     "data": {"field": "value"},
                     "reason": "explanation"
                 }
+            requester_email: Email address of the requester (for notifications)
         
         Returns:
             proposal_id: UUID of the created proposal
@@ -55,7 +56,8 @@ class ProposalManager:
             "status": "pending",
             "target_record_id": proposal.get("id"),  # None for create operations
             "payload": payload,
-            "reason": proposal.get("reason", "")
+            "reason": proposal.get("reason", ""),
+            "requester_email": requester_email
         }
         
         # Insert into database
@@ -129,6 +131,14 @@ class ProposalManager:
             # Update proposal status to approved
             self.client.table("proposals").update({"status": "approved"}).eq("id", proposal_id).execute()
             
+            # Send email notification if requester email exists
+            print(f"DEBUG: Checking for requester_email in proposal: {proposal.get('requester_email')}")
+            if proposal.get("requester_email"):
+                print(f"DEBUG: Sending approval email to {proposal['requester_email']}")
+                self._send_approval_email(proposal)
+            else:
+                print("DEBUG: No requester_email found, skipping email notification")
+            
             return result
             
         except Exception as e:
@@ -148,6 +158,11 @@ class ProposalManager:
             "status": "rejected",
             "feedback": feedback
         }).eq("id", proposal_id).execute()
+        
+        # Send email notification if requester email exists
+        proposal_data = self.client.table("proposals").select("*").eq("id", proposal_id).execute()
+        if proposal_data.data and proposal_data.data[0].get("requester_email"):
+            self._send_rejection_email(proposal_data.data[0], feedback)
 
     # Legacy methods for backward compatibility
     def get_proposal(self) -> Optional[Dict]:
@@ -169,6 +184,64 @@ class ProposalManager:
                 "_proposal_id": p.get("id")  # Internal ID for operations
             }
         return None
+    
+    def _send_approval_email(self, proposal):
+        """Send email notification when proposal is approved."""
+        try:
+            from src.interfaces.email_bot import send_notification_email
+            
+            subject = "✅ Your Proposal Was Approved"
+            body = f"""
+Good news! Your proposal has been approved.
+
+Proposal Type: {proposal.get('proposal_type', 'N/A').upper()}
+Reason: {proposal.get('reason', 'N/A')}
+Status: APPROVED
+
+Your changes have been applied to the database.
+
+Thank you for using CrewAI News Manager!
+"""
+            
+            send_notification_email(
+                to_address=proposal['requester_email'],
+                subject=subject,
+                body=body
+            )
+            print(f"✅ Sent approval email to {proposal['requester_email']}")
+            
+        except Exception as e:
+            print(f"Warning: Could not send approval email: {e}")
+    
+    def _send_rejection_email(self, proposal, feedback):
+        """Send email notification when proposal is rejected."""
+        try:
+            from src.interfaces.email_bot import send_notification_email
+            
+            subject = "❌ Your Proposal Was Rejected"
+            body = f"""
+Your proposal was reviewed and rejected.
+
+Proposal Type: {proposal.get('proposal_type', 'N/A').upper()}
+Reason: {proposal.get('reason', 'N/A')}
+Status: REJECTED
+
+Feedback: {feedback or 'No feedback provided'}
+
+You can submit a new proposal with revisions.
+
+Thank you for using CrewAI News Manager!
+"""
+            
+            send_notification_email(
+                to_address=proposal['requester_email'],
+                subject=subject,
+                body=body
+            )
+            print(f"✅ Sent rejection email to {proposal['requester_email']}")
+            
+        except Exception as e:
+            print(f"Warning: Could not send rejection email: {e}")
 
     def clear_proposal(self) -> None:
         """

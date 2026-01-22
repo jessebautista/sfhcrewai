@@ -96,12 +96,19 @@ class SupabaseTools:
                 "news_date": now,
                 "created_at": now,
                 "news_url": slug,
-                "news_excerpt": "New article draft.", # Default excerpt
-                "draft": True
+                "news_excerpt": "New article draft." # Default excerpt
             },
             "reason": reason
         }
-        ProposalManager().submit_proposal(proposal)
+        
+        # Get requester email from context if available
+        try:
+            from src.core.request_context import get_requester_email
+            requester_email = get_requester_email()
+        except:
+            requester_email = None
+        
+        ProposalManager().submit_proposal(proposal, requester_email=requester_email)
         return "New article draft submitted for approval."
 
 
