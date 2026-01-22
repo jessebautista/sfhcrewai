@@ -249,16 +249,35 @@ class EmailBot:
             print(f"   Subject: {subject}")
             print(f"   Body preview: {body[:100]}...")
             
-            # Use subject as command (primary) or body as fallback
-            command = subject if subject else body[:200]
+            # Filter: Only process emails with "COMMAND:" prefix in subject
+            if not subject or not subject.upper().startswith("COMMAND:"):
+                print(f"⚠️ Skipping email - subject must start with 'COMMAND:'")
+                print(f"   Subject was: '{subject}'")
+                # Mark as read so we don't keep trying to process it
+                try:
+                    mail.store(email_id, '+FLAGS', '\\Seen')
+                except:
+                    pass
+                return
+            
+            # Remove "COMMAND:" prefix from subject for cleaner command
+            command = subject[8:].strip()  # Remove "COMMAND:" (8 characters)
             
             if not command.strip():
-                print("⚠️ Empty command, skipping")
+                print("⚠️ Empty command after COMMAND: prefix, skipping")
                 return
             
             self.logger.log("EmailBot", "email_received", 
                           f"Processing email from {from_address}", 
                           {"subject": subject, "command": command})
+            
+            # Set requester email in context for proposals
+            try:
+                from src.core.request_context import set_requester_email
+                set_requester_email(from_address)
+                print(f"   Requester email set: {from_address}")
+            except Exception as e:
+                print(f"   Warning: Could not set requester context: {e}")
             
             # Run agent
             print(f"🤖 Running agent with command: {command}")
@@ -277,6 +296,13 @@ class EmailBot:
                               f"Agent failed: {e}", 
                               {"command": command}, 
                               status="failure")
+            finally:
+                # Clear context after processing
+                try:
+                    from src.core.request_context import clear_request_context
+                    clear_request_context()
+                except:
+                    pass
             
             # Send reply
             self.send_reply(from_address, subject, response_text, message_id)
