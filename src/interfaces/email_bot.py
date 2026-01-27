@@ -267,6 +267,30 @@ class EmailBot:
                 print("⚠️ Empty command after COMMAND: prefix, skipping")
                 return
             
+            # Extract and process attachments
+            attachment_context = ""
+            try:
+                attachments = self.extract_email_attachments(msg)
+                
+                if attachments:
+                    print(f"📎 Processing {len(attachments)} attachment(s)...")
+                    
+                    from src.core.file_handler import process_files
+                    result = process_files(attachments)
+                    
+                    attachment_context = self.format_attachment_context(result)
+                    
+                    if result['images']:
+                        print(f"✅ Uploaded {len(result['images'])} image(s)")
+                    if result['pdf_text']:
+                        print(f"✅ Extracted content from files")
+                    if result['errors']:
+                        for error in result['errors']:
+                            print(f"⚠️ {error}")
+            
+            except Exception as e:
+                print(f"⚠️ Error processing attachments: {e}")
+            
             self.logger.log("EmailBot", "email_received", 
                           f"Processing email from {from_address}", 
                           {"subject": subject, "command": command})
