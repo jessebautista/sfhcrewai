@@ -11,6 +11,39 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+class FileWrapper:
+    """Wrapper to make bytes/attachments compatible with FileHandler interface."""
+    
+    def __init__(self, filename: str, data: bytes, content_type: str):
+        self.name = filename
+        self._data = data
+        self.type = content_type
+        self.size = len(data)
+    
+    def read(self):
+        """Return file data (mimics UploadedFile.read())."""
+        return self._data
+
+
+class FileAdapter:
+    """Adapt various file sources to FileHandler interface."""
+    
+    @staticmethod
+    def from_slack_file(filename: str, data: bytes, content_type: str):
+        """Create from Slack downloaded file."""
+        return FileWrapper(filename, data, content_type)
+    
+    @staticmethod
+    def from_email_attachment(filename: str, data: bytes, content_type: str):
+        """Create from email attachment."""
+        return FileWrapper(filename, data, content_type)
+    
+    @staticmethod
+    def from_bytes(filename: str, data: bytes, content_type: str = "application/octet-stream"):
+        """Generic byte conversion."""
+        return FileWrapper(filename, data, content_type)
+
+
 class FileHandler:
     """Handle file uploads, validation, and processing."""
     

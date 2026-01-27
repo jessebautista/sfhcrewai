@@ -22,6 +22,44 @@ app = App(token=os.environ.get("SLACK_USER_TOKEN"))
 slack_client = None
 
 
+def download_slack_files(files, token):
+    """Download files from Slack."""
+    import requests
+    from src.core.file_handler import FileAdapter
+    
+    downloaded = []
+    for file in files[:3]:
+        try:
+            if file.get('size', 0) > 10 * 1024 * 1024:
+                print(f"⚠️ Skip {file['name']}: Too large")
+                continue
+            
+            headers = {'Authorization': f'Bearer {token}'}
+            response = requests.get(file['url_private'], headers=headers)
+            
+            if response.status_code == 200:
+                file_obj = FileAdapter.from_slack_file(
+                    file['name'], response.content, file.get('mimetype', 'application/octet-stream')
+                )
+                downloaded.append(file_obj)
+                print(f"✅ Downloaded {file['name']}")
+        except Exception as e:
+            print(f"❌ Error: {e}")
+    return downloaded
+
+
+def format_attachment_context(result):
+    """Format attachment results."""
+    context = ""
+    if result['images']:
+        context += "\n\n📸 Attached Images:\n"
+        for idx, url in enumerate(result['images'], 1):
+            context += f"{idx}. {url}\n"
+    if result['pdf_text']:
+        context += f"\n\n📄 Content:\n{result['pdf_text'][:1500]}...\n"
+    return context
+
+
 @app.event("message")
 def handle_message(event, say, logger):
     """
@@ -34,8 +72,34 @@ def handle_message(event, say, logger):
     user_text = event.get("text", "")
     channel = event.get("channel")
     user = event.get("user")
+    files = event.get("files", [])
     
     logger.info(f"Received DM from {user}: {user_text}")
+    
+    # Process attachments if present
+    attachment_context = ""
+    if files:
+        say(f"📎 Processing {len(files)} attachment(s)...", channel=channel)
+        
+        try:
+            downloaded_files = download_slack_files(files, os.environ.get("SLACK_USER_TOKEN"))
+            
+            if downloaded_files:
+                from src.core.file_handler import process_files
+                result = process_files(downloaded_files)
+                
+                attachment_context = format_attachment_context(result)
+                
+                if result['images']:
+                    say(f"✅ Uploaded {len(result['images'])} image(s)", channel=channel)
+                if result['pdf_text']:
+                    say(f"✅ Extracted content from files", channel=channel)
+                if result['errors']:
+                    for error in result['errors']:
+                        say(f"⚠️ {error}", channel=channel)
+        except Exception as e:
+            logger.error(f"Attachment error: {e}")
+            say(f"⚠️ Error processing attachments: {str(e)}", channel=channel)
     
     # Acknowledge receipt
     say(
@@ -44,9 +108,12 @@ def handle_message(event, say, logger):
     )
     
     try:
+        # Combine with attachments
+        full_command = user_text + attachment_context
+        
         # Run the agent
         orchestrator = OrchestratorAgent()
-        result = orchestrator.run_mission(user_text)
+        result = orchestrator.run_mission(full_command)
         
         # Reply with result
         say(
