@@ -1,82 +1,214 @@
-# CrewAI News Manager for Sing for Hope
+# CrewAI News Manager
 
-An intelligent, multi-agent system designed to manage news content for Sing for Hope. This application uses [CrewAI](https://crewai.com) for agent orchestration, [Supabase](https://supabase.com) as the backend database, and [Streamlit](https://streamlit.io) for the Human-in-the-Loop (HITL) user interface.
+Multi-interface AI news management system with Human-in-the-Loop workflow.
 
-## 🚀 Features
+---
 
--   **Multi-Agent Orchestration**: Specialized agents for fetching, drafting, and creating news content.
--   **Human-in-the-Loop (HITL)**: Strict approval workflow. Agents can only *propose* changes or new articles; write operations require explicit human approval via the UI.
--   **Supabase Integration**: Securely manages news records in a PostgreSQL database using Supabase.
--   **Image Generation**: Integrated DALL-E 3 support for generating relevant news imagery automatically.
--   **Real-time "Thinking" Interaction**: Watch the agents plan and execute tasks in real-time within the Streamlit interface.
+## 🚀 Quick Start
 
-## 🛠️ Tech Stack
-
--   **Framework**: Python 3.10+
--   **Agents**: CrewAI
--   **UI**: Streamlit
--   **Database**: Supabase (PostgreSQL)
--   **AI/LLM**: OpenAI (GPT-4o) or OpenRouter compatible models
-
-## 📦 Installation
-
-1.  **Clone the repository**:
-    ```bash
-    git clone https://github.com/jessebautista/sfhcrewai.git
-    cd sfhcrewai
-    ```
-
-2.  **Set up Virtual Environment**:
-    ```bash
-    python -m venv .venv
-    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-    ```
-
-3.  **Install Dependencies**:
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-4.  **Configure Environment**:
-    Copy the example environment file and fill in your credentials:
-    ```bash
-    cp .env.example .env
-    ```
-    
-    Required variables in `.env`:
-    -   `SUPABASE_URL`: Your Supabase project URL.
-    -   `SUPABASE_KEY`: Your Supabase Service Role Key.
-    -   `OPENAI_API_KEY`: Your OpenAI API Key (or OpenRouter key).
-    -   `OPENAI_API_BASE`: (Optional) Base URL if using a proxy/OpenRouter.
-    -   `OPENAI_MODEL_NAME`: (Optional) Model to use (default: `gpt-4o-mini`).
-
-## 🏃‍♂️ Running the Application
-
-To start the Streamlit interface:
+**Get started in 3 minutes:**
 
 ```bash
-PYTHONPATH=. streamlit run src/ui/app.py
+# 1. Install dependencies
+pip install -r requirements.txt
+
+# 2. Configure environment
+cp .env.example .env
+# Edit .env with your API keys
+
+# 3. Run database migrations
+python scripts/run_migration.py
+
+# 4. Start an interface
+streamlit run src/ui/app.py        # Web UI
+# OR
+python src/interfaces/slack_bot.py  # Slack Bot
+# OR
+python src/interfaces/email_bot.py  # Email Bot
 ```
 
-The application will open in your default browser at `http://localhost:8501`.
+**📖 See [QUICKSTART.md](QUICKSTART.md) for detailed instructions.**
 
-## 🧪 Testing
+---
 
-This project follows a Test-Driven Development (TDD) approach. To run the test suite:
+## ✨ Features
 
-```bash
-pytest
-```
+- **🖥️ Web UI** - Interactive Streamlit dashboard
+- **💬 Slack Bot** - Team collaboration with DM commands
+- **📧 Email Bot** - Remote access via email commands
+- **📎 File Attachments** - Upload images, PDFs, CSVs (all interfaces)
+- **🔐 Human-in-the-Loop** - Proposal approval workflow
+- **📊 Observability** - Real-time agent logging & dashboard
+- **🗄️ Supabase Backend** - Database + file storage
 
-## 🛡️ Security
-
--   **Write Protection**: The `SupabaseManager` is designed to reject direct write operations from agents.
--   **Proposal System**: All changes are channeled through a `ProposalManager` singleton, ensuring they are reviewed in the "Admin Controls" sidebar before execution.
+---
 
 ## 📂 Project Structure
 
--   `src/agents`: Definitions for CrewAI agents (Orchestrator, Fetcher/Content).
--   `src/tools`: Tools for agents (Supabase Ops, Image Gen).
--   `src/core`: Core logic (Proposal Manager).
--   `src/ui`: Streamlit application and custom callback handlers.
--   `tests`: Pytest test suite.
+```
+sfhcrewai-main/
+├── src/
+│   ├── agents/           # CrewAI agents
+│   ├── core/             # Core utilities
+│   ├── interfaces/       # User interfaces (Web, Slack, Email)
+│   ├── tools/            # CrewAI tools
+│   └── ui/               # Streamlit components
+├── docs/
+│   ├── setup/            # Setup guides
+│   └── technical_specs/  # Technical documentation
+├── scripts/
+│   └── db_migrations/    # Database schema
+├── tests/                # Test suite
+├── QUICKSTART.md         # User guide
+└── README.md             # This file
+```
+
+---
+
+## 📚 Documentation
+
+### Setup Guides
+
+Located in [`docs/setup/`](docs/setup/):
+
+- **[SLACK_SETUP.md](docs/setup/SLACK_SETUP.md)** - Slack bot configuration
+- **[EMAIL_SETUP.md](docs/setup/EMAIL_SETUP.md)** - Email bot configuration
+- **[ATTACHMENT_SETUP.md](docs/setup/ATTACHMENT_SETUP.md)** - File storage setup
+- **[EMAIL_COMMAND_FILTER.md](docs/setup/EMAIL_COMMAND_FILTER.md)** - Email command format
+- **[SLACK_PROPOSAL_APPROVAL.md](docs/setup/SLACK_PROPOSAL_APPROVAL.md)** - Interactive buttons
+
+### User Guides
+
+- **[QUICKSTART.md](QUICKSTART.md)** - Complete usage guide for all interfaces
+
+### Technical Specs
+
+Located in [`docs/technical_specs/`](docs/technical_specs/):
+- Database schema
+- API integration details
+- Architecture documentation
+
+---
+
+## 🛠️ Configuration
+
+### Required Environment Variables
+
+```bash
+# Supabase
+SUPABASE_URL=https://xxx.supabase.co
+SUPABASE_KEY=eyJxxx...
+
+# LLM (choose one)
+OPENROUTER_API_KEY=sk-or-xxx
+# OR
+OPENAI_API_KEY=sk-xxx
+
+# Slack (optional)
+SLACK_USER_TOKEN=xoxp-xxx
+SLACK_APP_TOKEN=xapp-xxx
+
+# Email (optional)
+EMAIL_ADDRESS=your@gmail.com
+EMAIL_PASSWORD=app-password
+SMTP_SERVER=smtp.gmail.com
+IMAP_SERVER=imap.gmail.com
+```
+
+---
+
+## 🎯 Usage Examples
+
+### Web UI
+```bash
+streamlit run src/ui/app.py
+# Open http://localhost:8501
+# Chat, upload files, manage proposals
+```
+
+### Slack
+```
+# Direct message to bot
+Create article about AI
+
+# With attachment
+[Upload image.jpg]
+Create article using this image
+```
+
+### Email
+```
+To: your-email@gmail.com
+Subject: COMMAND: Create article about blockchain
+Attachments: reference.pdf
+```
+
+---
+
+## 🧪 Testing
+
+```bash
+# Run tests
+pytest
+
+# Test Slack connection
+python -c "from slack_sdk import WebClient; print('✅ Slack OK')"
+
+# Test database
+python scripts/run_migration.py
+```
+
+---
+
+## 📦 Dependencies
+
+Core packages:
+- `crewai` - AI agent framework
+- `streamlit` - Web UI
+- `supabase` - Backend database + storage
+- `slack_bolt` - Slack integration
+- `pdfplumber` - PDF text extraction
+- `Pillow` - Image processing
+
+See [requirements.txt](requirements.txt) for complete list.
+
+---
+
+## 🔧 Database Setup
+
+```bash
+# Run all migrations
+python scripts/run_migration.py
+
+# Manual migration
+python scripts/run_migration.py scripts/db_migrations/01_create_agent_logs.sql
+```
+
+See [`scripts/MIGRATION_INSTRUCTIONS.md`](scripts/MIGRATION_INSTRUCTIONS.md) for details.
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Run tests: `pytest`
+4. Submit a pull request
+
+---
+
+## 📄 License
+
+MIT License - see LICENSE file for details
+
+---
+
+## 🆘 Support
+
+**Issues?** Check the troubleshooting section in [QUICKSTART.md](QUICKSTART.md)
+
+**Questions?** Review the setup guides in [`docs/setup/`](docs/setup/)
+
+---
+
+**Built with ❤️ using CrewAI, Streamlit, and Supabase**
