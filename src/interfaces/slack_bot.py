@@ -130,9 +130,19 @@ def handle_message(event, say, logger):
             logger.error(f"Attachment error: {e}")
             say(f"⚠️ Error processing attachments: {str(e)}", channel=channel)
     
-    # Acknowledge receipt
+    
+    # Check if this is a conversational message (greeting, introduction, etc)
+    from src.core.behavioral_config import BehavioralConfig
+    is_conversational = BehavioralConfig.is_conversational(user_text)
+    
+    # Acknowledge receipt with professional, concise message
+    if is_conversational:
+        ack_message = f"{BehavioralConfig.INITIAL_RESPONSE_TEMPLATE} ⏳"
+    else:
+        ack_message = f"Processing your request... ⏳"
+    
     say(
-        text=f"Processing your request: '{user_text}'... ⏳",
+        text=ack_message,
         channel=channel,
         thread_ts=thread_ts  # Reply in thread if applicable
     )
@@ -213,9 +223,19 @@ def handle_mention(event, say, logger):
     except Exception as e:
         logger.warning(f"Memory not available: {e}. Proceeding without context.")
     
-    # Acknowledge in thread
+    
+    # Check if this is a conversational message
+    from src.core.behavioral_config import BehavioralConfig
+    is_conversational = BehavioralConfig.is_conversational(user_text)
+    
+    # Acknowledge in thread with professional message
+    if is_conversational:
+        ack_message = f"{BehavioralConfig.INITIAL_RESPONSE_TEMPLATE} ⏳"
+    else:
+        ack_message = f"Processing your request... ⏳"
+    
     say(
-        text=f"Processing your request: '{user_text}'... ⏳",
+        text=ack_message,
         channel=channel,
         thread_ts=thread_ts
     )

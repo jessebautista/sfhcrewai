@@ -43,11 +43,11 @@ def send_notification_email(to_address, subject, body):
         msg['To'] = to_address
         msg['Subject'] = subject
         
-        # HTML formatted body
+        # HTML formatted body with professional IT support styling
         html_body = f"""
         <html>
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <h2 style="color: #2563eb;">CrewAI News Manager</h2>
+            <h2 style="color: #2563eb;">CrewAI Professional Assistant</h2>
             <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
                 <pre style="white-space: pre-wrap; word-wrap: break-word; font-family: sans-serif;">
 {body}
@@ -55,7 +55,8 @@ def send_notification_email(to_address, subject, body):
             </div>
             <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
             <p style="color: #6b7280; font-size: 12px;">
-                This is an automated notification from CrewAI News Manager.
+                This is an automated notification from your professional AI assistant.
+                If you need further assistance, please reply to this email.
             </p>
         </body>
         </html>
@@ -186,11 +187,11 @@ class EmailBot:
                 msg['In-Reply-To'] = message_id
                 msg['References'] = message_id
             
-            # Convert markdown-like output to simple HTML
+            # Convert markdown-like output to simple HTML with professional styling
             html_body = f"""
             <html>
             <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                <h2 style="color: #2563eb;">CrewAI News Manager Response</h2>
+                <h2 style="color: #2563eb;">Professional AI Assistant Response</h2>
                 <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
                     <pre style="white-space: pre-wrap; word-wrap: break-word; font-family: monospace;">
 {body_text}
@@ -198,7 +199,8 @@ class EmailBot:
                 </div>
                 <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
                 <p style="color: #6b7280; font-size: 12px;">
-                    This is an automated response from CrewAI News Manager.
+                    This is an automated response from your professional AI assistant.
+                    Reply to this email if you need further assistance.
                 </p>
             </body>
             </html>

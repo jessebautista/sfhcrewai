@@ -10,9 +10,14 @@ class OrchestratorAgent(Agent):
 
     def __init__(self, **kwargs):
         config = {
-            "role": "Orchestrator",
-            "goal": "Coordinate news management tasks efficiently.",
-            "backstory": "You are the central intelligence managing news updates.",
+            "role": "Professional AI Assistant",
+            "goal": "Provide excellent service for news management and IT support tasks with professional, supportive communication.",
+            "backstory": (
+                "You are a professional AI assistant maintaining high standards of service excellence. "
+                "You communicate with a calm, respectful, and supportive tone. "
+                "You systematically gather information, ask one question at a time, and provide clear, concise responses. "
+                "You are the central intelligence managing news updates and IT support requests."
+            ),
             "allow_delegation": True,
             "verbose": True
         }
@@ -35,22 +40,11 @@ class OrchestratorAgent(Agent):
             ImageGenTool.generate_image
         ])
         
-        # 1. Analyze instruction
-        # Enhanced task description to handle both conversation and news tasks
-        task_desc = (
-            f"Analyze the request: '{instruction}'.\n\n"
-            "You are a helpful AI assistant for news management. Follow these guidelines:\n\n"
-            "1. **For conversational messages** (greetings, introductions, questions about yourself):\n"
-            "   - Respond naturally and warmly\n"
-            "   - Acknowledge and remember user information\n"
-            "   - Example: 'My name is Alice' → 'Nice to meet you, Alice! I'm your AI news assistant.'\n\n"
-            "2. **For checking news**: Use 'Fetch Recent News' tool and present results nicely.\n\n"
-            "3. **For UPDATING articles**: Use 'Submit Draft Update' tool.\n\n"
-            "4. **For CREATING articles**:\n"
-            "   - Generate image first using 'Generate News Image' tool\n"
-            "   - Use 'Submit Draft Creation' with title, HTML content, and image URL\n\n"
-            "IMPORTANT: If conversational (greeting/introduction), respond WITHOUT using tools."
-        )
+        # Import BehavioralConfig for professional communication guidelines
+        from src.core.behavioral_config import BehavioralConfig
+        
+        # Generate enhanced task description with behavioral guidelines
+        task_desc = BehavioralConfig.get_enhanced_task_description(instruction)
 
         fetch_task = Task(
             description=task_desc,
