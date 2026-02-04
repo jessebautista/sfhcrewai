@@ -1,0 +1,358 @@
+================================================================================
+SFH CREWAI NEWS MANAGER - FEATURE REPORT
+================================================================================
+Generated: 2026-02-03 09:37:05
+
+SUMMARY
+--------------------------------------------------------------------------------
+Total Features: 10
+Active Features: 10
+
+Total Unique Dependencies: 26
+Total Environment Variables: 15
+Total Database Tables: 6
+
+
+DETAILED FEATURE BREAKDOWN
+================================================================================
+
+1. Slack Bot Integration
+--------------------------------------------------------------------------------
+Status: ✅ Active
+
+Description:
+  Real-time Slack bot for news management with DM and channel mention support
+
+Components:
+  • src/interfaces/slack_bot.py - Main bot handler
+  • Direct messaging support
+  • Channel mentions with @bot
+  • Thread-based conversations
+  • Interactive buttons for proposals
+
+Dependencies:
+  • slack-bolt>=1.18.0 - Slack bot framework
+  • slack-sdk - Slack API client
+  • python-dotenv - Environment variables
+
+Environment Variables Required:
+  • SLACK_APP_TOKEN - Slack app-level token
+  • SLACK_BOT_TOKEN - Bot user OAuth token
+  • SLACK_USER_TOKEN - User token for file access
+
+Database Tables:
+  • conversations
+  • conversation_messages
+  • agent_logs
+  • proposals
+
+
+2. Email Bot Integration
+--------------------------------------------------------------------------------
+Status: ✅ Active
+
+Description:
+  Email-based interface for news management via Gmail
+
+Components:
+  • src/interfaces/email_bot.py - Email handler
+  • Gmail API integration
+  • Email parsing and processing
+  • Attachment support (PDFs, images)
+
+Dependencies:
+  • google-auth-oauthlib - Gmail authentication
+  • google-auth-httplib2 - HTTP client for Google APIs
+  • google-api-python-client - Gmail API wrapper
+
+Environment Variables Required:
+  • GMAIL_CREDENTIALS_PATH - Path to Gmail OAuth credentials
+  • GMAIL_TOKEN_PATH - Stored token location
+
+Database Tables:
+  • agent_logs
+  • proposals
+
+
+3. Web UI
+--------------------------------------------------------------------------------
+Status: ✅ Active
+
+Description:
+  Streamlit-based web dashboard for news article management
+
+Components:
+  • src/interfaces/web_ui.py - Streamlit app
+  • Article listing and filtering
+  • Manual article creation
+  • Draft proposals management
+  • Real-time updates
+
+Dependencies:
+  • streamlit - Web UI framework
+  • pandas - Data manipulation
+  • python-dotenv - Environment variables
+
+Environment Variables Required:
+  • SUPABASE_URL - Database endpoint
+  • SUPABASE_KEY - Database access key
+
+Database Tables:
+  • news_articles
+  • draft_proposals
+
+
+4. News Management System
+--------------------------------------------------------------------------------
+Status: ✅ Active
+
+Description:
+  Core news article operations: fetch, create, update
+
+Components:
+  • src/tools/supabase_ops.py - Database operations
+  • Fetch recent articles
+  • Create new articles
+  • Update existing articles
+  • Draft proposal system
+
+Dependencies:
+  • supabase>=2.0.0 - Database client
+  • postgrest - PostgreSQL REST client
+
+Environment Variables Required:
+  • SUPABASE_URL
+  • SUPABASE_KEY
+
+Database Tables:
+  • news_articles
+  • draft_proposals
+
+
+5. AI Image Generation
+--------------------------------------------------------------------------------
+Status: ✅ Active
+
+Description:
+  Automatic image generation for news articles using Google's Imagen
+
+Components:
+  • src/tools/image_gen.py - Image generation tool
+  • Vertex AI Imagen integration
+  • Automatic prompt engineering
+  • Cloud Storage upload
+
+Dependencies:
+  • google-cloud-aiplatform - Vertex AI SDK
+  • google-cloud-storage - GCS for image hosting
+  • Pillow - Image processing
+
+Environment Variables Required:
+  • GCP_PROJECT_ID - Google Cloud project
+  • GCP_LOCATION - Vertex AI region (us-central1)
+  • GCS_BUCKET_NAME - Storage bucket for images
+  • GOOGLE_APPLICATION_CREDENTIALS - Service account key
+
+
+6. File Attachment Processing
+--------------------------------------------------------------------------------
+Status: ✅ Active
+
+Description:
+  PDF and image processing for context-aware news management
+
+Components:
+  • src/core/file_handler.py - File processor
+  • PDF text extraction
+  • Image upload to cloud storage
+  • Multi-file support
+
+Dependencies:
+  • PyPDF2 - PDF text extraction
+  • google-cloud-storage - Image hosting
+  • Pillow - Image manipulation
+
+Environment Variables Required:
+  • GCS_BUCKET_NAME - Storage bucket
+
+
+7. Human-in-the-Loop Workflow
+--------------------------------------------------------------------------------
+Status: ✅ Active
+
+Description:
+  Proposal system for article changes requiring human approval
+
+Components:
+  • Draft proposal creation
+  • Email notifications on approval/rejection
+  • Slack interactive buttons
+  • Two-stage workflow (propose → approve)
+
+Dependencies:
+  • supabase - Proposal storage
+  • google-api-python-client - Gmail for notifications
+  • slack-bolt - Interactive buttons
+
+Environment Variables Required:
+  • SUPABASE_URL
+  • SUPABASE_KEY
+
+Database Tables:
+  • draft_proposals
+
+
+8. Observability & Logging
+--------------------------------------------------------------------------------
+Status: ✅ Active
+
+Description:
+  Agent execution tracking and event logging
+
+Components:
+  • src/core/logger.py - Centralized logger
+  • Agent event logging
+  • Mission tracking
+  • Error monitoring
+
+Dependencies:
+  • supabase - Log storage
+  • python standard library (logging)
+
+Environment Variables Required:
+  • SUPABASE_URL
+  • SUPABASE_KEY
+
+Database Tables:
+  • agent_logs
+
+
+9. Long-Term Memory (NEW!)
+--------------------------------------------------------------------------------
+Status: ✅ Active (Just implemented!)
+
+Description:
+  Persistent conversation memory for context-aware interactions
+
+Components:
+  • src/core/memory_manager.py - Memory management
+  • Conversation tracking
+  • Message history storage
+  • Context retrieval (last 20 messages)
+  • Thread-aware memory for Slack
+  • User isolation (separate conversations per user)
+
+Dependencies:
+  • supabase - Conversation storage
+  • python standard library (datetime, typing)
+
+Environment Variables Required:
+  • SUPABASE_URL
+  • SUPABASE_KEY
+
+Database Tables:
+  • conversations
+  • conversation_messages
+
+
+10. CrewAI Agent Orchestration
+--------------------------------------------------------------------------------
+Status: ✅ Active
+
+Description:
+  Multi-agent system for intelligent task delegation
+
+Components:
+  • src/agents/orchestrator.py - Main coordinator
+  • src/agents/fetcher.py - Data fetcher agent
+  • Task creation and delegation
+  • Conversational AI support
+
+Dependencies:
+  • crewai>=0.80.0 - Multi-agent framework
+  • langchain - LLM integration
+  • openai - GPT models
+
+Environment Variables Required:
+  • OPENAI_API_KEY - OpenAI API access
+
+Database Tables:
+  • agent_logs
+
+
+================================================================================
+CONSOLIDATED DEPENDENCY LIST
+================================================================================
+
+AI/Agent Framework:
+  • crewai>=0.80.0 - Multi-agent framework
+  • langchain - LLM integration
+  • openai - GPT models
+
+Google Cloud Platform:
+  • google-api-python-client - Gmail API wrapper
+  • google-api-python-client - Gmail for notifications
+  • google-auth-httplib2 - HTTP client for Google APIs
+  • google-auth-oauthlib - Gmail authentication
+  • google-cloud-aiplatform - Vertex AI SDK
+  • google-cloud-storage - GCS for image hosting
+  • google-cloud-storage - Image hosting
+
+Slack Integration:
+  • slack-bolt - Interactive buttons
+  • slack-bolt>=1.18.0 - Slack bot framework
+  • slack-sdk - Slack API client
+
+Database:
+  • postgrest - PostgreSQL REST client
+  • supabase - Conversation storage
+  • supabase - Log storage
+  • supabase - Proposal storage
+  • supabase>=2.0.0 - Database client
+
+UI & File Processing:
+  • Pillow - Image manipulation
+  • Pillow - Image processing
+  • PyPDF2 - PDF text extraction
+  • pandas - Data manipulation
+  • streamlit - Web UI framework
+
+Other:
+  • python standard library (datetime, typing)
+  • python standard library (logging)
+  • python-dotenv - Environment variables
+
+================================================================================
+DATABASE SCHEMA
+================================================================================
+
+  • agent_logs
+  • conversation_messages
+  • conversations
+  • draft_proposals
+  • news_articles
+  • proposals
+
+================================================================================
+REQUIRED ENVIRONMENT VARIABLES
+================================================================================
+
+  • GCP_LOCATION - Vertex AI region (us-central1)
+  • GCP_PROJECT_ID - Google Cloud project
+  • GCS_BUCKET_NAME - Storage bucket
+  • GCS_BUCKET_NAME - Storage bucket for images
+  • GMAIL_CREDENTIALS_PATH - Path to Gmail OAuth credentials
+  • GMAIL_TOKEN_PATH - Stored token location
+  • GOOGLE_APPLICATION_CREDENTIALS - Service account key
+  • OPENAI_API_KEY - OpenAI API access
+  • SLACK_APP_TOKEN - Slack app-level token
+  • SLACK_BOT_TOKEN - Bot user OAuth token
+  • SLACK_USER_TOKEN - User token for file access
+  • SUPABASE_KEY
+  • SUPABASE_KEY - Database access key
+  • SUPABASE_URL
+  • SUPABASE_URL - Database endpoint
+
+================================================================================
+END OF REPORT
+================================================================================

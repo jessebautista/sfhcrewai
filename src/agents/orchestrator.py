@@ -36,20 +36,25 @@ class OrchestratorAgent(Agent):
         ])
         
         # 1. Analyze instruction
-        # We need a more comprehensive task description to handle creation/update logic
+        # Enhanced task description to handle both conversation and news tasks
         task_desc = (
-            f"Analyze the request: '{instruction}'.\n"
-            "1. If checking news, fetch recent articles.\n"
-            "2. If needing to UPDATE an existing article, use 'Submit Draft Update'.\n"
-            "3. If needing to CREATE a NEW article:\n"
-            "   - You MUST generate a high-quality image using 'Generate News Image' tool first.\n"
-            "   - Then use 'Submit Draft Creation' with the new title, content, and the generated image URL.\n"
-            "   - Content should be HTML formatted (simple tags like <p>, <b>, etc.)."
+            f"Analyze the request: '{instruction}'.\n\n"
+            "You are a helpful AI assistant for news management. Follow these guidelines:\n\n"
+            "1. **For conversational messages** (greetings, introductions, questions about yourself):\n"
+            "   - Respond naturally and warmly\n"
+            "   - Acknowledge and remember user information\n"
+            "   - Example: 'My name is Alice' → 'Nice to meet you, Alice! I'm your AI news assistant.'\n\n"
+            "2. **For checking news**: Use 'Fetch Recent News' tool and present results nicely.\n\n"
+            "3. **For UPDATING articles**: Use 'Submit Draft Update' tool.\n\n"
+            "4. **For CREATING articles**:\n"
+            "   - Generate image first using 'Generate News Image' tool\n"
+            "   - Use 'Submit Draft Creation' with title, HTML content, and image URL\n\n"
+            "IMPORTANT: If conversational (greeting/introduction), respond WITHOUT using tools."
         )
 
         fetch_task = Task(
             description=task_desc,
-            expected_output="Final confirmation that the request was processed or draft submitted.",
+            expected_output="A helpful response that either: (1) Answers conversationally if it's a greeting/introduction/question, OR (2) Confirms the news management action was completed (fetch/draft submission).",
             agent=fetcher
         )
         
